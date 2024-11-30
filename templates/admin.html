@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookShelf - панель администратора</title>
+    <link rel="icon" type="image/png" href="static/icon.png" sizes="32x32">
+    <link rel="stylesheet" href="static/styles.css">
+    <script>
+        async function deletePoint(pointId) {
+            if (confirm("Вы уверены, что хотите удалить эту точку?")) {
+                try {
+                    const response = await fetch(`/admin/delete/${pointId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert("Ошибка при удалении точки.");
+                    }
+                } catch (error) {
+                    console.error("Ошибка:", error);
+                    alert("Ошибка при удалении точки.");
+                }
+            }
+        }
+
+        // Функция для обработки загрузки аудиофайла
+        function handleAudioDrop(event) {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+
+            // Проверяем, что файл - это аудио
+            if (file && file.type.startsWith('audio/')) {
+                const audioInput = document.getElementById('audio-file');
+                audioInput.files = event.dataTransfer.files;
+                document.getElementById('audio-preview').textContent = file.name;
+            } else {
+                alert('Пожалуйста, перетащите аудиофайл.');
+            }
+        }
+
+        function allowAudioDrag(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        function handleImageDrop(event) {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+
+            if (file && file.type.startsWith('image/')) {
+                const imageInput = document.getElementById('image-file');
+                imageInput.files = event.dataTransfer.files;
+                document.getElementById('image-preview').textContent = file.name;
+            } else {
+                alert('Пожалуйста, перетащите изображение.');
+            }
+        }
+
+        function allowImageDrag(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    </script>
+</head>
+<body>
+    <h1>Кабинет администратора</h1>
+    <h2>Добавить новую точку</h2>
+    <form action="/admin/add" method="post" enctype="multipart/form-data">
+        <input type="text" name="lat" placeholder="Широта" required>
+        <input type="text" name="lon" placeholder="Долгота" required>
+        <input type="text" name="tag" placeholder="Тег" required>
+        <input type="text" name="name" placeholder="Название" required>
+        <input type="text" name="description" placeholder="Описание" required>
+
+        <div 
+            class="drop-zone"
+            id="image-drop-zone"
+            ondragover="allowImageDrag(event)"
+            ondrop="handleImageDrop(event)">
+            Перетащите изображение сюда
+        </div>
+        <input type="file" id="image-file" name="image" style="display: none;">
+        <div class="file-preview" id="image-preview">Выберите изображение</div>
+
+        <div 
+            class="drop-zone"
+            id="audio-drop-zone"
+            ondragover="allowAudioDrag(event)"
+            ondrop="handleAudioDrop(event)">
+            Перетащите аудиофайл сюда
+        </div>
+        <input type="file" id="audio-file" name="audio" style="display: none;">
+        <div class="file-preview" id="audio-preview">Выберите аудиофайл</div>
+
+        <button type="submit">Добавить точку</button>
+    </form>
+
+    <h2>Существующие точки</h2>
+    <ul>
+        {% for point in points %}
+            <li>
+                {{ point.name }} ({{ point.lat }}, {{ point.lon }})
+                <button onclick="deletePoint({{ point.id }})">Удалить</button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <button class="back-button" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+    </button>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+</body>
+</html>
